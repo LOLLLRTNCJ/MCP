@@ -26,7 +26,7 @@ class BasicBlock(nn.Module):
         out += identity
         return self.relu(out)
 
-# ResNet主体
+
 class MediumResNet(nn.Module):
     def __init__(self, num_classes=10):
         super(MediumResNet, self).__init__()
@@ -68,54 +68,3 @@ class MediumResNet(nn.Module):
         x = x.view(x.size(0), -1)
         return self.fc(x)
 
-# 训练与评估逻辑
-def train():
-    transform = transforms.Compose([
-        transforms.Resize((64, 64)),
-        transforms.ToTensor()
-    ])
-
-    train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                 download=True, transform=transform)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64,
-                                               shuffle=True, num_workers=2)
-
-    test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                                download=True, transform=transform)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100,
-                                              shuffle=False, num_workers=2)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MediumResNet(num_classes=10).to(device)
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-    # 训练1轮演示
-    model.train()
-    for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-
-    # 测试准确率
-    model.eval()
-    correct, total = 0, 0
-    with torch.no_grad():
-        for images, labels in test_loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            _, predicted = outputs.max(1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    print(f"Test Accuracy: {100 * correct / total:.2f}%")
-
-    # 打印参数总量
-    total_params = sum(p.numel() for p in model.parameters())
-    print(f"Total Parameters: {total_params} ({total_params / 1e6:.2f} Million)")
-
-if __name__ == '__main__':
-    train()
